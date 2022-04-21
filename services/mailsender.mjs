@@ -7,13 +7,13 @@ import MailAccount from '../models/account.mjs';
 export default class MailSender {
   static scope = "offline_access%20user.read%20mail.read%20mail.send%20mail.send.shared"
 
-  async send({to, subject, body }) {
+  async send({to, subject, body, bodyType }) {
     let setup = Setup.lookup()
     let response = await this.callAPI(`${setup.from ? `users/${setup.from}` : "me"}/sendMail`, "post", {
       "message": {
         "subject": subject || "No subject",
         "body": {
-          "contentType": "Text",
+          "contentType": bodyType || "Text",
           "content": body || "<empty mail>"
         },
         "toRecipients": [
@@ -29,7 +29,7 @@ export default class MailSender {
     return response
   }
 
-  async callAPI(path, method = "get", body, returnRawResponse = false) {
+  async callAPI(path, method = "get", body, returnRawResponse = false, refreshTokenIfNecessary = true) {
     let defaultAccount = Setup.lookup().defaultAccount
     if(!defaultAccount) return {error: "No default account defined in setup"};
     let token = defaultAccount.accessToken
@@ -43,6 +43,12 @@ export default class MailSender {
         "Content-Type": method == "get" ? undefined : method == "patch" ? "application/json-patch+json" : "application/json"
       }
     })
+
+    if(response.status == 401 && refreshTokenIfNecessary){
+      await MailSender.refreshToken(defaultAccount)
+      return this.callAPI(path, method, body, returnRawResponse, false)
+    }
+
     if(returnRawResponse)
       return response
     if(response.headers.get("content-type")?.startsWith("application/json"))
@@ -102,5 +108,44 @@ export default class MailSender {
     let setup = Setup.lookup()
     setup.rel(account, "account", true)
     return account
+  }
+  
+  static async refreshToken(account) {
+    if (!Setup.lookup().clientId)
+      return null;
+
+    let res = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token",
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        // Note offline_access: necessary for getting refresh_token
+        body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&refresh_token=${encodeURIComponent(account.refreshToken)}&redirect_uri=${MailSender.getRedirectUrl()}&grant_type=refresh_token`
+      })
+    res = await res.json();
+    console.log(res)
+
+    if (res.error) {
+      console.log("Got error getting refresh token")
+      console.log(res)
+      return;
+    }
+
+    let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
+
+    if (!msUserRemote){
+      console.log("Did not get any info back from MS when asking from info")
+      return null;
+    }
+
+    if (msUserRemote.error) {
+      console.log("Got error asking for user info")
+      console.log(msUserRemote.error)
+      return;
+    }
+
+    account.accessToken = res.access_token
+    account.refreshToken = res.refresh_token
   }
 }
