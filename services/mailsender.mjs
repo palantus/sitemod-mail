@@ -2,6 +2,7 @@ import fetch from 'node-fetch'
 import Setup from '../models/setup.mjs'
 import MailAccount from '../models/account.mjs';
 import User from '../../../models/user.mjs';
+import LogEntry from "../../../models/logentry.mjs"
 
 // SEE https://docs.microsoft.com/en-us/graph/auth-v2-user?view=graph-rest-1.0
 
@@ -83,8 +84,7 @@ export default class MailSender {
     console.log(res)
 
     if (res.error) {
-      User.lookupAdmin()?.notify("mail", `Got error logging user in. Please re-auth.`, {title: "Alert"})
-      console.log("Got error logging user in")
+      MailSender.logError("Got error logging user in. Please re-auth.")
       console.log(res)
       return;
     }
@@ -92,14 +92,12 @@ export default class MailSender {
     let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
 
     if (!msUserRemote){
-      User.lookupAdmin()?.notify("mail", `Did not get any info back from MS when asking from info`, {title: "Alert"})
-      console.log("Did not get any info back from MS when asking from info")
+      MailSender.logError("Did not get any info back from MS when asking from info")
       return null;
     }
 
     if (msUserRemote.error) {
-      User.lookupAdmin()?.notify("mail", `Got error asking for user info`, {title: "Alert"})
-      console.log("Got error asking for user info")
+      MailSender.logError("Got error asking for user info")
       console.log(msUserRemote.error)
       return;
     }
@@ -131,8 +129,7 @@ export default class MailSender {
     //console.log(res)
 
     if (res.error) {
-      User.lookupAdmin()?.notify("mail", `Could not send email due to authentication issues. Please re-auth.`, {title: "Alert"})
-      console.log("Got error getting refresh token for email sending")
+      MailSender.logError(`Could not send email due to authentication issues. Please re-auth.`)
       console.log(res)
       return;
     }
@@ -140,19 +137,27 @@ export default class MailSender {
     let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
 
     if (!msUserRemote){
-      User.lookupAdmin()?.notify("mail", `Did not get any info back from MS when asking from info`, {title: "Alert"})
-      console.log("Did not get any info back from MS when asking from info")
+      MailSender.logError(`Did not get any info back from MS when asking from info`)
       return null;
     }
 
     if (msUserRemote.error) {
-      User.lookupAdmin()?.notify("mail", `Got error asking for user info`, {title: "Alert"})
-      console.log("Got error asking for user info")
+      MailSender.logError(`Got error asking for user info`)
       console.log(msUserRemote.error)
       return;
     }
 
     account.accessToken = res.access_token
     account.refreshToken = res.refresh_token
+  }
+
+  static log(text){
+    new LogEntry(typeof text === "string" ? text : JSON.stringify(text), "mail")
+  }
+
+  static logError(text){
+    console.log(text)
+    User.lookupAdmin()?.notify("mail", typeof text === "string" ? text : JSON.stringify(text), {title: "Alert"})
+    MailSender.log(text)
   }
 }
