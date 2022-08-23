@@ -4,6 +4,7 @@ const route = Router();
 import { validateAccess } from "../../../../services/auth.mjs"
 import MailSender from "../../services/mailsender.mjs";
 import User from "../../../../models/user.mjs";
+import SiteSetup from "../../../../models/setup.mjs"
 
 export default (app) => {
 
@@ -16,7 +17,7 @@ export default (app) => {
   route.post('/send-test', function (req, res, next) {
     if (!validateAccess(req, res, { permission: "mail.setup" })) return;
     if(!req.body.to || typeof req.body.to !== "string" || !User.validateEmailAddress(req.body.to)) throw "Invalid or missing destination email"
-    new MailSender().send({to: req.body.to, subject: "Test mail", body: "This mail confirms that you can send mail from your SiteCore instance"}).then(error => {
+    new MailSender().send({to: req.body.to, subject: "Test mail", body: `Hi ${res.locals.user.name}.<br>This e-mail confirms that you can send mail from your site '${SiteSetup.lookup().siteTitle||"SiteCore"}'.`, bodyType: "html"}).then(error => {
       res.json({success: !!!error, error})
     })
   });

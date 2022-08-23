@@ -29,7 +29,7 @@ export default (app) => {
     new MailSender().send({
       to: user.email, 
       subject: `${CoreSetup.lookup().siteTitle}: Password reset`, 
-      body: `<h1>Hi ${user.name}!</h1><p>Use the following link to change your password:</p><a href="${resetLink}">Reset password</a>`,
+      body: `<h1>Hi ${user.name}!</h1><p>Use the following link to change your password:</p><a href="${resetLink}">Reset password</a><br><br>If you did not request the change of password, then please ignore this e-mail.`,
       bodyType: "html"
     }).then(error => {
       res.json({success: !!!error, error})
@@ -47,7 +47,7 @@ export default (app) => {
     new MailSender().send({
       to: user.email, 
       subject: `${CoreSetup.lookup().siteTitle}: Password reset`, 
-      body: `<h1>Hi ${user.name}!</h1><p>Here is your new password:</p><div>${newPassword}</div>`,
+      body: `<h1>Hi ${user.name}!</h1><p>Here is your new password:</p><div>${newPassword}</div><br>You can change your new password to something of your choice <a href="${global.sitecore.siteURL}/profile">here</a>.<br>If you just want to go to the site and log in, follow <a href="${global.sitecore.siteURL}/login">this link</a>.`,
       bodyType: "html"
     }).then(error => {
       res.json({success: !!!error, error})

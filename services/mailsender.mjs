@@ -11,12 +11,15 @@ export default class MailSender {
 
   async send({to, subject, body, bodyType }) {
     let setup = Setup.lookup()
+    let signature = setup.signatureHTML ? bodyType == "html" ? `<br>${setup.signatureHTML}` 
+                                                             : "\n" + setup.signatureBody 
+                                        : ""
     let response = await this.callAPI(`${setup.from ? `users/${setup.from}` : "me"}/sendMail`, "post", {
       "message": {
         "subject": subject || "No subject",
         "body": {
           "contentType": bodyType || "Text",
-          "content": body || "<empty mail>"
+          "content": (body || "<empty mail>") + signature
         },
         "toRecipients": [
           {

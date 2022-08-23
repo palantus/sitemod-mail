@@ -3,6 +3,8 @@ const elementName = 'mail-setup-page'
 import api from "/system/api.mjs"
 import "/components/field-edit.mjs"
 import "/components/field-list.mjs"
+import "/components/richtext.mjs"
+import {getUser} from "/system/user.mjs"
 import {on, off} from "/system/events.mjs"
 import { promptDialog, confirmDialog } from "/components/dialog.mjs"
 
@@ -39,6 +41,11 @@ template.innerHTML = `
     <div id="status"></div>
     <button id="send-test">Send test email</button>
     <button id="auth">Authorize / switch account</button>
+    <br>
+    <br>
+
+    <h3>Mail signature</h3>
+    <richtext-component id="signature-editor" noclose></richtext-component>
   </div>
 `;
 
@@ -55,6 +62,7 @@ class Element extends HTMLElement {
 
     this.shadowRoot.getElementById("send-test").addEventListener("click", this.sendTest)
     this.shadowRoot.getElementById("auth").addEventListener("click", this.auth)
+    this.shadowRoot.getElementById("signature-editor").addEventListener("save", ({detail: {text}}) => api.patch("mail/setup", {signatureBody: text}))
     
     this.refreshData();
   }
@@ -74,11 +82,14 @@ class Element extends HTMLElement {
       this.shadowRoot.getElementById("status").innerHTML = `Not signed in. Use Authorize button to do so.`
     }
 
+    this.shadowRoot.getElementById("signature-editor").value(setup.signatureBody||"")
+
     this.shadowRoot.querySelectorAll("field-edit:not([disabled])").forEach(e => e.setAttribute("patch", `mail/setup`));
   }
 
   async sendTest(){
-    let to = await promptDialog("Enter email address to send the email to")
+    let user = (await api.query("{me{email}}")).me
+    let to = await promptDialog("Enter email address to send the email to", user.email||"")
     if(!to) return;
     await api.post("mail/send-test", {to})
   }

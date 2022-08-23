@@ -18,7 +18,8 @@ export default class Setup extends Entity{
     return {
       clientId: this.clientId || null,
       from: this.from || null,
-      defaultAccount: this.defaultAccount?.toObj() || null
+      defaultAccount: this.defaultAccount?.toObj() || null,
+      signatureBody: this.signatureBody || null
     }
   }
 }
