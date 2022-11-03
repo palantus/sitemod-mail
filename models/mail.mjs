@@ -34,22 +34,23 @@ export default class Mail extends Entity {
   }
 
   async send(){
-    try{
-      if(!this.to) {
-        this.log("Missing 'to' in email");
-        return false;
-      }
-      this.rel(new LogEntry(`Sending email to ${this.to}...`, "mail"), "log")
-      await new MailSender(this).send({
-        to: this.to, 
-        subject: this.subject||"<empty subject>", 
-        body: this.body||"",
-        bodyType: this.bodyType||"Text"
-      })
+    if(!this.to) {
+      this.log("Missing 'to' in email");
+      return false;
+    }
+    this.rel(new LogEntry(`Sending email to ${this.to}...`, "mail"), "log")
+    let isSent = await new MailSender(this).send({
+      to: this.to, 
+      subject: this.subject||"<empty subject>", 
+      body: this.body||"",
+      bodyType: this.bodyType||"Text"
+    })
+
+    if(isSent){
       this.status = "sent"
       this.rel(new LogEntry(`Email sent!`, "mail"), "log")
       return true;
-    } catch(err){
+    } else {
       this.status = "failed"
       this.rel(new LogEntry(`Could not send email to ${this.to}. Error: ${err}`, "mail"), "log")
       return false;

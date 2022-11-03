@@ -15,8 +15,9 @@ async function runJob(){
   if(!defaultAccount) return;
   let token = defaultAccount.accessToken
   if(!token) return;
-  await new MailSender().refreshToken(defaultAccount)
-  new MailSender().log("E-mail token refreshed", "info")
+  let refreshTokenError = await new MailSender().refreshToken(defaultAccount)
+  if(refreshTokenError) new MailSender().log("Could not refresh e-mail token", "error");
+  else new MailSender().log("E-mail token refreshed", "info")
 
   //Try to resend failed:
   for(let mail of Mail.allFailed()){

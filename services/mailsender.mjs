@@ -27,7 +27,7 @@ export default class MailSender {
     let signature = setup.signatureHTML ? bodyType == "html" ? `<br>${setup.signatureHTML}` 
                                                              : "\n" + setup.signatureBody 
                                         : ""
-    let response = await this.callAPI(`${setup.from ? `users/${setup.from}` : "me"}/sendMail`, "post", {
+    let result = await this.callAPI(`${setup.from ? `users/${setup.from}` : "me"}/sendMail`, "post", {
       "message": {
         "subject": subject || "No subject",
         "body": {
@@ -43,17 +43,18 @@ export default class MailSender {
         ]
       }
     })
-    if(response) {
-      this.log(response, "error")
+    if(!result.success) {
+      this.log(result.error, "error")
+      return false;
     }
-    return response
+    return true;
   }
 
   async callAPI(path, method = "get", body, returnRawResponse = false, refreshTokenIfNecessary = true) {
     let defaultAccount = Setup.lookup().defaultAccount
-    if(!defaultAccount) return {error: "No default account defined in setup"};
+    if(!defaultAccount) return {success: false, error: "No default account defined in setup"};
     let token = defaultAccount.accessToken
-    if(!token) return "Could not get token";
+    if(!token) return {success: false, error: "Could not get token"};
     let url = `https://graph.microsoft.com/v1.0/${path}`;
     let response = await fetch(url, {
       method,
@@ -65,15 +66,16 @@ export default class MailSender {
     })
 
     if(response.status == 401 && refreshTokenIfNecessary){
-      this.refreshToken(defaultAccount)
+      let refreshTokenError = this.refreshToken(defaultAccount)
+      if(refreshTokenError) return {success: false, error: refreshTokenError};
       return this.callAPI(path, method, body, returnRawResponse, false)
     }
 
     if(returnRawResponse)
-      return response
+      return {success: response.status >= 200 && response.status < 300, response}
     if(response.headers.get("content-type")?.startsWith("application/json"))
-      return await response.json()
-    return null;
+      return {success: response.status >= 200 && response.status < 300, response: await response.json()}
+    return {success: response.status >= 200 && response.status < 300, response: null};
   }
 
   getAuthLink(){
@@ -85,7 +87,7 @@ export default class MailSender {
     return encodeURIComponent(`${global.sitecore.apiURL}/mail/auth/redirect`)
   }
   
-  async login(code, redirect) {
+  async login(code) {
     if (!Setup.lookup().clientId)
       return null;
 
@@ -144,29 +146,14 @@ export default class MailSender {
         body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&refresh_token=${encodeURIComponent(account.refreshToken)}&redirect_uri=${this.getRedirectUrl()}&grant_type=refresh_token`
       })
     res = await res.json();
-    //console.log(res)
-
-    if (res.error) {
-      this.log(`Could not send email due to authentication issues. Please re-auth.`, "error")
-      this.log(JSON.stringify(res), "error")
-      console.log(res)
-      return;
-    }
+    if (res.error) return `Could not send email due to authentication issues. Please re-auth. Res: ${JSON.stringify(res)}`
 
     let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
-
-    if (!msUserRemote){
-      this.log(`Did not get any info back from MS when asking from info`, "error")
-      return null;
-    }
-
-    if (msUserRemote.error) {
-      this.log(`Got error asking for user info`, "error")
-      console.log(msUserRemote.error)
-      return;
-    }
+    if (!msUserRemote) return `Did not get any info back from MS when asking from info`
+    if (msUserRemote.error) return `Got error asking for user info: ${msUserRemote.error}`
 
     account.accessToken = res.access_token
     account.refreshToken = res.refresh_token
+    return null;
   }
 }
