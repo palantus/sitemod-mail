@@ -133,6 +133,7 @@ export default class MailSender {
 
     if (res.error) {
       MailSender.logError(`Could not send email due to authentication issues. Please re-auth.`)
+      MailSender.logError(res.error)
       console.log(res)
       return;
     }
