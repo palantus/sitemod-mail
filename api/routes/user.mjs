@@ -2,7 +2,7 @@ import express from "express"
 const { Router, Request, Response } = express;
 import User from "../../../../models/user.mjs"
 import {getTimestamp} from "../../../../tools/date.mjs"
-import MailSender from "../../services/mailsender.mjs";
+import Mail from "../../models/mail.mjs";
 import CoreSetup from "../../../../models/setup.mjs"
 import {service as userService} from "../../../../services/user.mjs"
 import { v4 as uuidv4 } from 'uuid';
@@ -26,13 +26,13 @@ export default (app) => {
     user.passwordResetKey = uuidv4()
     let resetLink = `${global.sitecore.siteURL}/password-reset?token=${userService.getTempAuthToken(user)}&single=true&resetKey=${user.passwordResetKey}`
 
-    new MailSender().send({
+    new Mail({
       to: user.email, 
       subject: `${CoreSetup.lookup().siteTitle}: Password reset`, 
       body: `<h1>Hi ${user.name}!</h1><p>Use the following link to change your password:</p><a href="${resetLink}">Reset password</a><br><br>If you did not request the change of password, then please ignore this e-mail.`,
       bodyType: "html"
-    }).then(error => {
-      res.json({success: !!!error, error})
+    }).send().then(success => {
+      res.json({success})
     })
   });
 
@@ -44,13 +44,13 @@ export default (app) => {
     user.setPassword(newPassword)
     user.removeProp("passwordResetKey")
 
-    new MailSender().send({
+    new Mail({
       to: user.email, 
       subject: `${CoreSetup.lookup().siteTitle}: Password reset`, 
       body: `<h1>Hi ${user.name}!</h1><p>Here is your new password:</p><div>${newPassword}</div><br>You can change your new password to something of your choice <a href="${global.sitecore.siteURL}/profile">here</a>.<br>If you just want to go to the site and log in, follow <a href="${global.sitecore.siteURL}/login">this link</a>.`,
       bodyType: "html"
-    }).then(error => {
-      res.json({success: !!!error, error})
+    }).send().then(success => {
+      res.json({success})
     })
   })
 };
