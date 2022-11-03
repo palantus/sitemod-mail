@@ -2,6 +2,7 @@ import MailSender from "./mailsender.mjs"
 import Setup from "../models/setup.mjs";
 import Mail from "../models/mail.mjs";
 import LogEntry from "../../../models/logentry.mjs";
+import MailAccount from "../models/account.mjs";
 
 export function startCheckerService(){
   runJob()
@@ -35,4 +36,9 @@ async function runJob(){
   Mail.all().filter(a => a.timestamp < todayMinus15Str)
             .forEach(a => a.delete());
 
+  //Clean up accounts not in use
+  for(let account of MailAccount.all()){
+    if(account._id == defaultAccount._id) continue;
+    account.delete()
+  }
 }

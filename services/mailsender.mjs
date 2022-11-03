@@ -3,6 +3,7 @@ import Setup from '../models/setup.mjs'
 import MailAccount from '../models/account.mjs';
 import User from '../../../models/user.mjs';
 import LogEntry from "../../../models/logentry.mjs"
+import { getTimestamp } from '../../../tools/date.mjs';
 
 // SEE https://docs.microsoft.com/en-us/graph/auth-v2-user?view=graph-rest-1.0
 
@@ -50,9 +51,15 @@ export default class MailSender {
     return true;
   }
 
-  async callAPI(path, method = "get", body, returnRawResponse = false, refreshTokenIfNecessary = true) {
+  async callAPI(path, method = "get", body, returnRawResponse = false) {
     let defaultAccount = Setup.lookup().defaultAccount
     if(!defaultAccount) return {success: false, error: "No default account defined in setup"};
+    if(defaultAccount.expires <= getTimestamp()) {
+      this.log("Access token has expired. Trying to refresh it using refresh token...")
+      let refreshTokenError = await this.refreshToken(defaultAccount)
+      if(refreshTokenError) return {success: false, error: refreshTokenError};
+      this.log("Access token refreshed")
+    }
     let token = defaultAccount.accessToken
     if(!token) return {success: false, error: "Could not get token"};
     let url = `https://graph.microsoft.com/v1.0/${path}`;
@@ -65,7 +72,7 @@ export default class MailSender {
       }
     })
 
-    if(response.status == 401 && refreshTokenIfNecessary){
+    if(response.status == 401){
       let refreshTokenError = await this.refreshToken(defaultAccount)
       if(refreshTokenError) return {success: false, error: refreshTokenError};
       return this.callAPI(path, method, body, returnRawResponse, false)
@@ -101,7 +108,7 @@ export default class MailSender {
         body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&code=${encodeURIComponent(code)}&redirect_uri=${this.getRedirectUrl()}&grant_type=authorization_code`
       })
     res = await res.json();
-    this.log(response, "info")
+    this.log(JSON.stringify(res), "info")
 
     if (res.error) {
       this.log("Got error logging user in. Please re-auth.", "error")
@@ -126,7 +133,11 @@ export default class MailSender {
     let name = msUserRemote.displayName
     let id = msUserRemote.id
 
-    let account = new MailAccount("ms", {email, name, id, accessToken: res.access_token, refreshToken: res.refresh_token})
+    let account = MailAccount.lookup(id) || new MailAccount("ms", id, {email, name})
+    account.accessToken = res.access_token
+    account.refreshToken = res.refresh_token
+    account.expires = getTimestamp(res.expires_in*1000)
+
     let setup = Setup.lookup()
     setup.rel(account, "account", true)
     return account
@@ -146,7 +157,7 @@ export default class MailSender {
         body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&refresh_token=${encodeURIComponent(account.refreshToken)}&redirect_uri=${this.getRedirectUrl()}&grant_type=refresh_token`
       })
     res = await res.json();
-    if (res.error) return `Could not send email due to authentication issues. Please re-auth. Res: ${JSON.stringify(res)}`
+    if (res.error) return `Could not send refresh access token. Please re-auth. Res: ${JSON.stringify(res)}`
 
     let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
     if (!msUserRemote) return `Did not get any info back from MS when asking from info`
@@ -154,6 +165,7 @@ export default class MailSender {
 
     account.accessToken = res.access_token
     account.refreshToken = res.refresh_token
+    account.expires = getTimestamp(res.expires_in*1000)
     return null;
   }
 }
