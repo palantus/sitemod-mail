@@ -15,14 +15,14 @@ async function runJob(){
   if(!defaultAccount) return;
   let token = defaultAccount.accessToken
   if(!token) return;
-  await MailSender.refreshToken(defaultAccount)
-  MailSender.log("E-mail token refreshed", "mail")
+  await new MailSender().refreshToken(defaultAccount)
+  new MailSender().logger("E-mail token refreshed", "info")
 
   //Try to resend failed:
   for(let mail of Mail.allFailed()){
     let successful = await mail.send()
     if(!successful){
-      new LogEntry(`Failed to resend email ${mail._id}`)
+      new MailSender().logger(`Failed to resend email ${mail._id}`, "error")
     }
   }
 

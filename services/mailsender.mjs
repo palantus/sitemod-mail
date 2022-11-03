@@ -9,7 +9,15 @@ import LogEntry from "../../../models/logentry.mjs"
 export default class MailSender {
   static scope = "offline_access%20user.read%20mail.read%20mail.send%20mail.send.shared"
 
-  async send({to, subject, body, bodyType }) {
+  constructor(logger){
+    this.logger = logger || ((text, type) => {
+      console.log(text); 
+      if(type == "error") User.lookupAdmin()?.notify("mail", typeof text === "string" ? text : JSON.stringify(text), {title: "Alert"})
+      else new LogEntry(typeof text === "string" ? text : JSON.stringify(text), "mail")
+    })
+  }
+
+  async send({to, subject, body, bodyType}) {
     let setup = Setup.lookup()
     let signature = setup.signatureHTML ? bodyType == "html" ? `<br>${setup.signatureHTML}` 
                                                              : "\n" + setup.signatureBody 
@@ -30,7 +38,9 @@ export default class MailSender {
         ]
       }
     })
-    if(response) console.log(response)
+    if(response) {
+      this.logger(response, "error")
+    }
     return response
   }
 
@@ -50,7 +60,7 @@ export default class MailSender {
     })
 
     if(response.status == 401 && refreshTokenIfNecessary){
-      await MailSender.refreshToken(defaultAccount)
+      this.refreshToken(defaultAccount)
       return this.callAPI(path, method, body, returnRawResponse, false)
     }
 
@@ -61,16 +71,16 @@ export default class MailSender {
     return null;
   }
 
-  static getAuthLink(){
+  getAuthLink(){
     let state = ''
-    return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${Setup.lookup().clientId}&response_type=code&redirect_uri=${MailSender.getRedirectUrl()}&response_mode=query&scope=${MailSender.scope}&state=${state}`
+    return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${Setup.lookup().clientId}&response_type=code&redirect_uri=${this.getRedirectUrl()}&response_mode=query&scope=${MailSender.scope}&state=${state}`
   }
 
-  static getRedirectUrl(){
+  getRedirectUrl(){
     return encodeURIComponent(`${global.sitecore.apiURL}/mail/auth/redirect`)
   }
   
-  static async login(code, redirect) {
+  async login(code, redirect) {
     if (!Setup.lookup().clientId)
       return null;
 
@@ -81,26 +91,26 @@ export default class MailSender {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         // Note offline_access: necessary for getting refresh_token
-        body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&code=${encodeURIComponent(code)}&redirect_uri=${MailSender.getRedirectUrl()}&grant_type=authorization_code`
+        body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&code=${encodeURIComponent(code)}&redirect_uri=${this.getRedirectUrl()}&grant_type=authorization_code`
       })
     res = await res.json();
-    console.log(res)
+    this.logger(response, "info")
 
     if (res.error) {
-      MailSender.logError("Got error logging user in. Please re-auth.")
-      console.log(res)
+      this.logger("Got error logging user in. Please re-auth.", "error")
+      this.logger(res, "error")
       return;
     }
 
     let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
 
     if (!msUserRemote){
-      MailSender.logError("Did not get any info back from MS when asking from info")
+      this.logger("Did not get any info back from MS when asking from info", "error")
       return null;
     }
 
     if (msUserRemote.error) {
-      MailSender.logError("Got error asking for user info")
+      this.logger("Got error asking for user info", "error")
       console.log(msUserRemote.error)
       return;
     }
@@ -115,7 +125,7 @@ export default class MailSender {
     return account
   }
   
-  static async refreshToken(account) {
+  async refreshToken(account) {
     if (!Setup.lookup().clientId)
       return null;
 
@@ -126,14 +136,14 @@ export default class MailSender {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         // Note offline_access: necessary for getting refresh_token
-        body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&refresh_token=${encodeURIComponent(account.refreshToken)}&redirect_uri=${MailSender.getRedirectUrl()}&grant_type=refresh_token`
+        body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&refresh_token=${encodeURIComponent(account.refreshToken)}&redirect_uri=${this.getRedirectUrl()}&grant_type=refresh_token`
       })
     res = await res.json();
     //console.log(res)
 
     if (res.error) {
-      MailSender.logError(`Could not send email due to authentication issues. Please re-auth.`)
-      MailSender.logError(JSON.stringify(res))
+      this.logger(`Could not send email due to authentication issues. Please re-auth.`, "error")
+      this.logger(JSON.stringify(res), "error")
       console.log(res)
       return;
     }
@@ -141,27 +151,17 @@ export default class MailSender {
     let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
 
     if (!msUserRemote){
-      MailSender.logError(`Did not get any info back from MS when asking from info`)
+      this.logger(`Did not get any info back from MS when asking from info`, "error")
       return null;
     }
 
     if (msUserRemote.error) {
-      MailSender.logError(`Got error asking for user info`)
+      this.logger(`Got error asking for user info`, "error")
       console.log(msUserRemote.error)
       return;
     }
 
     account.accessToken = res.access_token
     account.refreshToken = res.refresh_token
-  }
-
-  static log(text){
-    new LogEntry(typeof text === "string" ? text : JSON.stringify(text), "mail")
-  }
-
-  static logError(text){
-    console.log(text)
-    User.lookupAdmin()?.notify("mail", typeof text === "string" ? text : JSON.stringify(text), {title: "Alert"})
-    MailSender.log(text)
   }
 }

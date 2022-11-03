@@ -45,7 +45,7 @@ export default class Mail extends Entity {
       return true;
     } catch(err){
       this.status = "failed"
-      new LogEntry(`Could not send email to ${user.email}. Error: ${err}`, "forum")
+      new LogEntry(`Could not send email to ${this.to}. Error: ${err}`, "mail")
       return false;
     }
   }

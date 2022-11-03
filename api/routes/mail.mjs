@@ -12,7 +12,7 @@ export default (app) => {
   app.use("/mail", route)
 
   route.get('/authorize-link', (req, res) => {
-    res.json(MailSender.getAuthLink())
+    res.json(new MailSender().getAuthLink())
   })
 
   route.post('/send-test', function (req, res, next) {
@@ -30,7 +30,7 @@ export default (app) => {
     const requestToken = req.query.code
     const state = req.query.state
     try{
-      await MailSender.login(requestToken)
+      await new MailSender().login(requestToken)
       if (state.startsWith("http")) {
         let url = new URL(decodeURIComponent(state))
         url.searchParams.set("token", token);
