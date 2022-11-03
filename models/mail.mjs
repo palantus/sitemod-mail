@@ -52,7 +52,7 @@ export default class Mail extends Entity {
       return true;
     } else {
       this.status = "failed"
-      this.rel(new LogEntry(`Could not send email to ${this.to}. Error: ${err}`, "mail"), "log")
+      this.rel(new LogEntry(`Could not send email to ${this.to}`, "mail"), "log")
       return false;
     }
   }
