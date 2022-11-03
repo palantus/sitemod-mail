@@ -9,12 +9,17 @@ import LogEntry from "../../../models/logentry.mjs"
 export default class MailSender {
   static scope = "offline_access%20user.read%20mail.read%20mail.send%20mail.send.shared"
 
-  constructor(logger){
-    this.logger = logger || ((text, type) => {
+  constructor(mail){
+    this.mail = mail
+  }
+
+  log(text, type){
+    if(type == "error") {
+      User.lookupAdmin()?.notify("mail", typeof text === "string" ? text : JSON.stringify(text), {title: "Alert"})
       console.log(text); 
-      if(type == "error") User.lookupAdmin()?.notify("mail", typeof text === "string" ? text : JSON.stringify(text), {title: "Alert"})
-      else new LogEntry(typeof text === "string" ? text : JSON.stringify(text), "mail")
-    })
+    }
+    let entry = new LogEntry(typeof text === "string" ? text : JSON.stringify(text), "mail")
+    this.mail?.rel(entry, "log")
   }
 
   async send({to, subject, body, bodyType}) {
@@ -39,7 +44,7 @@ export default class MailSender {
       }
     })
     if(response) {
-      this.logger(response, "error")
+      this.log(response, "error")
     }
     return response
   }
@@ -94,23 +99,23 @@ export default class MailSender {
         body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&code=${encodeURIComponent(code)}&redirect_uri=${this.getRedirectUrl()}&grant_type=authorization_code`
       })
     res = await res.json();
-    this.logger(response, "info")
+    this.log(response, "info")
 
     if (res.error) {
-      this.logger("Got error logging user in. Please re-auth.", "error")
-      this.logger(res, "error")
+      this.log("Got error logging user in. Please re-auth.", "error")
+      this.log(res, "error")
       return;
     }
 
     let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
 
     if (!msUserRemote){
-      this.logger("Did not get any info back from MS when asking from info", "error")
+      this.log("Did not get any info back from MS when asking from info", "error")
       return null;
     }
 
     if (msUserRemote.error) {
-      this.logger("Got error asking for user info", "error")
+      this.log("Got error asking for user info", "error")
       console.log(msUserRemote.error)
       return;
     }
@@ -142,8 +147,8 @@ export default class MailSender {
     //console.log(res)
 
     if (res.error) {
-      this.logger(`Could not send email due to authentication issues. Please re-auth.`, "error")
-      this.logger(JSON.stringify(res), "error")
+      this.log(`Could not send email due to authentication issues. Please re-auth.`, "error")
+      this.log(JSON.stringify(res), "error")
       console.log(res)
       return;
     }
@@ -151,12 +156,12 @@ export default class MailSender {
     let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
 
     if (!msUserRemote){
-      this.logger(`Did not get any info back from MS when asking from info`, "error")
+      this.log(`Did not get any info back from MS when asking from info`, "error")
       return null;
     }
 
     if (msUserRemote.error) {
-      this.logger(`Got error asking for user info`, "error")
+      this.log(`Got error asking for user info`, "error")
       console.log(msUserRemote.error)
       return;
     }

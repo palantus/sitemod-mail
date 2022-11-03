@@ -1,4 +1,5 @@
 import Entity, {query} from "entitystorage"
+import LogEntry from "../../../models/logentry.mjs";
 import { getTimestamp } from "../../../tools/date.mjs";
 import MailSender from "../services/mailsender.mjs"
 
@@ -34,20 +35,29 @@ export default class Mail extends Entity {
 
   async send(){
     try{
-      if(!this.to) throw "Missing 'to' in email";
-      await new MailSender().send({
+      if(!this.to) {
+        this.log("Missing 'to' in email");
+        return false;
+      }
+      this.rel(new LogEntry(`Sending email to ${this.to}...`, "mail"), "log")
+      await new MailSender(this).send({
         to: this.to, 
         subject: this.subject||"<empty subject>", 
         body: this.body||"",
         bodyType: this.bodyType||"Text"
       })
       this.status = "sent"
+      this.rel(new LogEntry(`Email sent!`, "mail"), "log")
       return true;
     } catch(err){
       this.status = "failed"
-      new LogEntry(`Could not send email to ${this.to}. Error: ${err}`, "mail")
+      this.rel(new LogEntry(`Could not send email to ${this.to}. Error: ${err}`, "mail"), "log")
       return false;
     }
+  }
+
+  getLog(){
+    return this.rels.log?.map(entry => LogEntry.from(entry))||[]
   }
 
   toObj() {
