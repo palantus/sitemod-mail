@@ -17,7 +17,6 @@ export default class MailSender {
     if(type == "error") {
       User.lookupAdmin()?.notify("mail", typeof text === "string" ? text : JSON.stringify(text), {title: "Alert"})
       console.log(text); 
-      console.trace("Error trace");
     }
     let entry = new LogEntry(typeof text === "string" ? text : JSON.stringify(text), "mail")
     this.mail?.rel(entry, "log")
