@@ -17,6 +17,7 @@ export default class MailSender {
     if(type == "error") {
       User.lookupAdmin()?.notify("mail", typeof text === "string" ? text : JSON.stringify(text), {title: "Alert"})
       console.log(text); 
+      console.trace("Error trace");
     }
     let entry = new LogEntry(typeof text === "string" ? text : JSON.stringify(text), "mail")
     this.mail?.rel(entry, "log")
@@ -66,7 +67,7 @@ export default class MailSender {
     })
 
     if(response.status == 401 && refreshTokenIfNecessary){
-      let refreshTokenError = this.refreshToken(defaultAccount)
+      let refreshTokenError = await this.refreshToken(defaultAccount)
       if(refreshTokenError) return {success: false, error: refreshTokenError};
       return this.callAPI(path, method, body, returnRawResponse, false)
     }
