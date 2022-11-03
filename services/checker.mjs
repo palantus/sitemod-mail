@@ -22,6 +22,7 @@ async function runJob(){
 
   //Try to resend failed:
   for(let mail of Mail.allFailed()){
+    new MailSender().log(`Trying to resend e-mail to ${mail._id}...`, "info")
     let successful = await mail.send()
     if(!successful){
       new MailSender().log(`Failed to resend email ${mail._id}`, "error")
