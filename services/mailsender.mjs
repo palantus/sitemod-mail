@@ -157,15 +157,25 @@ export default class MailSender {
         body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&refresh_token=${encodeURIComponent(account.refreshToken)}&redirect_uri=${this.getRedirectUrl()}&grant_type=refresh_token`
       })
     res = await res.json();
-    if (res.error) return `Could not send refresh access token. Please re-auth. Res: ${JSON.stringify(res)}`
+    if (res.error) {
+      account.lastTokenRefreshStatus = "fail"
+      return `Could not send refresh access token. Please re-auth. Res: ${JSON.stringify(res)}`
+    }
 
     let msUserRemote = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${res.access_token}` } })).json()
-    if (!msUserRemote) return `Did not get any info back from MS when asking from info`
-    if (msUserRemote.error) return `Got error asking for user info: ${msUserRemote.error}`
+    if (!msUserRemote) {
+      account.lastTokenRefreshStatus = "fail"
+      return `Did not get any info back from MS when asking from info`
+    }
+    if (msUserRemote.error) {
+      account.lastTokenRefreshStatus = "fail"
+      return `Got error asking for user info: ${msUserRemote.error}`
+    }
 
     account.accessToken = res.access_token
     account.refreshToken = res.refresh_token
     account.expires = getTimestamp(res.expires_in*1000)
+    account.lastTokenRefreshStatus = "success"
     return null;
   }
 }

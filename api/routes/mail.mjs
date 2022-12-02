@@ -6,6 +6,7 @@ import MailSender from "../../services/mailsender.mjs";
 import User from "../../../../models/user.mjs";
 import SiteSetup from "../../../../models/setup.mjs"
 import Mail from "../../models/mail.mjs";
+import Setup from "../../models/setup.mjs";
 
 export default (app) => {
 
@@ -43,4 +44,19 @@ export default (app) => {
       res.status(501).json({success: false, error: "Failed to log in"})
     }
   });
+
+  route.get('/token-status', async function (req, res, next) {
+    if (!validateAccess(req, res, { permission: "mail.setup" })) return;
+    let setup = Setup.lookup()
+    if (!setup.clientId) return res.json({status: "setup", error: "Missing clientId"});
+    let defaultAccount = setup.defaultAccount
+    if(!defaultAccount) return res.json({status: "setup", error: "Missing account"});
+    let token = defaultAccount.accessToken
+    if(!token) return res.json({status: "setup", error: "Missing token"});;
+    res.json({
+      status: defaultAccount.lastTokenRefreshStatus == "fail" ? "fail" : defaultAccount.lastTokenRefreshStatus == "success" ? "success" : "unknown",
+      error: defaultAccount.lastTokenRefreshStatus == "success" ? null : defaultAccount.lastTokenRefreshStatus == "fail" ? "Failed last refresh of token" : "No status"
+    })
+  })
+  
 };
