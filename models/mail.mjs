@@ -1,5 +1,6 @@
 import Entity, {query} from "entitystorage"
 import LogEntry from "../../../models/logentry.mjs";
+import User from "../../../models/user.mjs";
 import { getTimestamp } from "../../../tools/date.mjs";
 import MailSender from "../services/mailsender.mjs"
 
@@ -59,6 +60,15 @@ export default class Mail extends Entity {
 
   getLog(){
     return this.rels.log?.map(entry => LogEntry.from(entry))||[]
+  }
+
+  static getUsersFromFilters(filters){
+    let users = User.all();
+    if(filters.permission) users = users.filter(u => u.permissions.includes(filters.permission))
+    if(filters.role) users = users.filter(u => u.roles.includes(filters.role))
+    if(filters.user) users = users.filter(u => u.id == filters.user)
+    users = users.filter(u => u.email)
+    return users
   }
 
   toObj() {

@@ -7,6 +7,8 @@ import User from "../../../../models/user.mjs";
 import SiteSetup from "../../../../models/setup.mjs"
 import Mail from "../../models/mail.mjs";
 import Setup from "../../models/setup.mjs";
+import Permission from "../../../../models/permission.mjs";
+import { md2html } from "../../../../tools/markdown.mjs";
 
 export default (app) => {
 
@@ -22,9 +24,25 @@ export default (app) => {
     new Mail({
       to: req.body.to, 
       subject: "Test mail", 
-      body: `Hi ${res.locals.user.name}.<br>This e-mail confirms that you can send mail from your site '${SiteSetup.lookup().siteTitle||"SiteCore"}'.`, 
+      body: "", 
       bodyType: "html"
     }).send().then(success => res.json(success))
+  });
+
+  route.post('/send', function (req, res, next) {
+    if (!validateAccess(req, res, { permission: "mail.send" })) return;
+    let recipients = Mail.getUsersFromFilters(req.body)
+    if(recipients.length < 1) throw "No recipients"
+    for(let user of recipients){
+      if(!user.email) continue;
+      return new Mail({
+        to: user.email, 
+        subject: req.body.subject, 
+        body: md2html(req.body.body), 
+        bodyType: "html"
+      }).send()
+    }
+    res.json({success: true})
   });
 
   route.get('/auth/redirect', async function (req, res, next) {
@@ -59,4 +77,8 @@ export default (app) => {
     })
   })
   
+  route.post('/recipient-count', async function (req, res, next) {
+    if (!validateAccess(req, res, { permission: "mail.send" })) return;
+    res.json({count: Mail.getUsersFromFilters(req.body).length})
+  })
 };
