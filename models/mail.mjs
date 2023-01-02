@@ -63,7 +63,7 @@ export default class Mail extends Entity {
   }
 
   static getUsersFromFilters(filters){
-    let users = User.all();
+    let users = User.active();
     if(filters.permission) users = users.filter(u => u.permissions.includes(filters.permission))
     if(filters.role) users = users.filter(u => u.roles.includes(filters.role))
     if(filters.user) users = users.filter(u => u.id == filters.user)
@@ -73,10 +73,23 @@ export default class Mail extends Entity {
 
   toObj() {
     return {
+      id: this._id,
       to: this.to,
+      timestamp: this.timestamp,
       subject: this.subject,
+      status: this.status,
       body: this.body,
       bodyType: this.bodyType
+    }
+  }
+
+  toObjSimple() {
+    return {
+      id: this._id,
+      to: this.to,
+      subject: this.subject,
+      status: this.status,
+      timestamp: this.timestamp
     }
   }
 }

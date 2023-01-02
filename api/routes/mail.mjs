@@ -34,7 +34,6 @@ export default (app) => {
     let recipients = Mail.getUsersFromFilters(req.body)
     if(recipients.length < 1) throw "No recipients"
     for(let user of recipients){
-      if(!user.email) continue;
       return new Mail({
         to: user.email, 
         subject: req.body.subject, 
@@ -63,7 +62,7 @@ export default (app) => {
     }
   });
 
-  route.get('/token-status', async function (req, res, next) {
+  route.get('/token-status', function (req, res, next) {
     if (!validateAccess(req, res, { permission: "mail.setup" })) return;
     let setup = Setup.lookup()
     if (!setup.clientId) return res.json({status: "setup", error: "Missing clientId"});
@@ -77,8 +76,20 @@ export default (app) => {
     })
   })
   
-  route.post('/recipient-count', async function (req, res, next) {
+  route.post('/recipient-count', function (req, res, next) {
     if (!validateAccess(req, res, { permission: "mail.send" })) return;
     res.json({count: Mail.getUsersFromFilters(req.body).length})
+  })
+  
+  route.get('/history', (req, res) => {
+    if (!validateAccess(req, res, { permission: "mail.setup" })) return;
+    res.json(Mail.all().slice(0, 100).map(m => m.toObjSimple()))
+  })
+  
+  route.get('/:id/log', (req, res) => {
+    if (!validateAccess(req, res, { permission: "mail.setup" })) return;
+    let mail = Mail.lookup(req.params.id)
+    if(!mail) return res.sendStatus(404);
+    res.json(mail.getLog().map(e => e.toObj()))
   })
 };

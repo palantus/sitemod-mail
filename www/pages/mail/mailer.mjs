@@ -3,10 +3,13 @@ const elementName = 'mailer-page'
 import api from "/system/api.mjs"
 import "/components/field-edit.mjs"
 import "/components/field-list.mjs"
+import "/components/action-bar.mjs"
+import "/components/action-bar-item.mjs"
 import "/components/richtext.mjs"
-import {getUser} from "/system/user.mjs"
 import {on, off} from "/system/events.mjs"
-import { promptDialog, confirmDialog } from "/components/dialog.mjs"
+import {goto} from "/system/core.mjs"
+import { alertDialog } from "/components/dialog.mjs"
+import {userPermissions} from "/system/user.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -24,6 +27,10 @@ template.innerHTML = `
     }
     .hidden{display: none;}
   </style>  
+
+  <action-bar>
+      <action-bar-item id="history-btn">History</action-bar-item>
+  </action-bar>
 
   <div id="container">
 
@@ -62,24 +69,32 @@ class Element extends HTMLElement {
 
     this.refreshData = this.refreshData.bind(this);
     this.send = this.send.bind(this);
-    
+
+    this.shadowRoot.getElementById("history-btn").addEventListener("click", () => goto("/mail/history"))
+
     this.shadowRoot.getElementById("role").addEventListener("value-changed", this.refreshData)
     this.shadowRoot.getElementById("user").addEventListener("value-changed", this.refreshData)
     this.shadowRoot.getElementById("permission").addEventListener("value-changed", this.refreshData)
 
     this.shadowRoot.getElementById("send").addEventListener("click", this.send)
+
+    userPermissions().then(permissions => {
+      if(permissions.includes("axm.manage.edit")){
+        this.shadowRoot.getElementById("history-btn").classList.remove("hidden")
+      }
+
+      //Hide actionbar if there aren't any buttons visible
+      this.shadowRoot.querySelector("action-bar").classList.toggle("hidden", !!!this.shadowRoot.querySelector("action-bar action-bar-item:not(.hidden)"))
+    })
   }
 
   async refreshData(){
-    let {count} = await api.post('mail/recipient-count', {
-      role: this.shadowRoot.getElementById("role").getValue(),
-      permission: this.shadowRoot.getElementById("permission").getValue(),
-      user: this.shadowRoot.getElementById("user").getValue(),
-    })
-    this.shadowRoot.getElementById("rec-count").innerText = count
+    this.shadowRoot.getElementById("rec-count").innerText = await this.getCurCount()
   }
 
   async send(){
+    if((await this.getCurCount()) < 1) return alertDialog("No users in filter")
+
     await api.post("mail/send", {
       role: this.shadowRoot.getElementById("role").getValue(),
       permission: this.shadowRoot.getElementById("permission").getValue(),
@@ -87,6 +102,15 @@ class Element extends HTMLElement {
       subject: this.shadowRoot.getElementById("subject").getValue(),
       body: this.shadowRoot.getElementById("body-editor").value(),
     })
+  }
+
+  async getCurCount(){
+    let {count} = await api.post('mail/recipient-count', {
+      role: this.shadowRoot.getElementById("role").getValue(),
+      permission: this.shadowRoot.getElementById("permission").getValue(),
+      user: this.shadowRoot.getElementById("user").getValue(),
+    })
+    return count;
   }
 
   connectedCallback() {
