@@ -83,7 +83,7 @@ export default (app) => {
   
   route.get('/history', (req, res) => {
     if (!validateAccess(req, res, { permission: "mail.setup" })) return;
-    res.json(Mail.all().slice(0, 100).map(m => m.toObjSimple()))
+    res.json(Mail.all().sort((a, b) => a.timestamp < b.timestamp ? 1 : -1).slice(0, 100).map(m => m.toObjSimple()))
   })
   
   route.get('/:id/log', (req, res) => {
