@@ -34,7 +34,7 @@ export default (app) => {
     let recipients = Mail.getUsersFromFilters(req.body)
     if(recipients.length < 1) throw "No recipients"
     for(let user of recipients){
-      return new Mail({
+      new Mail({
         to: user.email, 
         subject: req.body.subject, 
         body: md2html(req.body.body), 

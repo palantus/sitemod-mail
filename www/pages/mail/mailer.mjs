@@ -95,6 +95,7 @@ class Element extends HTMLElement {
   async send(){
     if((await this.getCurCount()) < 1) return alertDialog("No users in filter")
 
+    this.shadowRoot.getElementById("send").toggleAttribute("disabled", true)
     await api.post("mail/send", {
       role: this.shadowRoot.getElementById("role").getValue(),
       permission: this.shadowRoot.getElementById("permission").getValue(),
@@ -102,6 +103,9 @@ class Element extends HTMLElement {
       subject: this.shadowRoot.getElementById("subject").getValue(),
       body: this.shadowRoot.getElementById("body-editor").value(),
     })
+
+    alertDialog("Mail sent!")
+    this.shadowRoot.getElementById("send").toggleAttribute("disabled", false)
   }
 
   async getCurCount(){
