@@ -137,6 +137,7 @@ export default class MailSender {
     account.accessToken = res.access_token
     account.refreshToken = res.refresh_token
     account.expires = getTimestamp(res.expires_in*1000)
+    account.lastTokenRefreshStatus = "success"
 
     let setup = Setup.lookup()
     setup.rel(account, "account", true)
