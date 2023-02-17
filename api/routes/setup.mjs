@@ -11,7 +11,8 @@ export default (app) => {
 
   route.get('/setup', function (req, res, next) {
     if (!validateAccess(req, res, { permission: "mail.setup" })) return;
-    res.json(Setup.lookup().toObj());
+    let setup = Setup.lookup();
+    res.json({...setup.toObj(), tokenStatus: setup.tokenStatus()});
   });
 
   route.patch('/setup', function (req, res, next) {

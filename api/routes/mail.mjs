@@ -64,16 +64,7 @@ export default (app) => {
 
   route.get('/token-status', function (req, res, next) {
     if (!validateAccess(req, res, { permission: "mail.setup" })) return;
-    let setup = Setup.lookup()
-    if (!setup.clientId) return res.json({status: "setup", error: "Missing clientId"});
-    let defaultAccount = setup.defaultAccount
-    if(!defaultAccount) return res.json({status: "setup", error: "Missing account"});
-    let token = defaultAccount.accessToken
-    if(!token) return res.json({status: "setup", error: "Missing token"});;
-    res.json({
-      status: defaultAccount.lastTokenRefreshStatus == "fail" ? "fail" : defaultAccount.lastTokenRefreshStatus == "success" ? "success" : "unknown",
-      error: defaultAccount.lastTokenRefreshStatus == "success" ? null : defaultAccount.lastTokenRefreshStatus == "fail" ? "Failed last refresh of token" : "No status"
-    })
+    res.json(Setup.lookup().tokenStatus())
   })
   
   route.post('/recipient-count', function (req, res, next) {

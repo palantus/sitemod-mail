@@ -39,8 +39,8 @@ template.innerHTML = `
 
     <h3>Status</h3>
     <div id="status"></div>
-    <button id="send-test">Send test email</button>
-    <button id="auth">Authorize / switch account</button>
+    <button id="send-test" class="styled">Send test email</button>
+    <button id="auth" class="styled">Authorize</button>
     <br>
     <br>
 
@@ -77,7 +77,7 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("send-test").toggleAttribute("disabled", !setup.defaultAccount)
 
     if(setup.defaultAccount){
-      this.shadowRoot.getElementById("status").innerHTML = `Signed in as ${setup.defaultAccount.email} (${setup.defaultAccount.name})`
+      this.shadowRoot.getElementById("status").innerHTML = `Signed in as ${setup.defaultAccount.email} (${setup.defaultAccount.name}). <br>Token status: ${setup.tokenStatus.error||setup.tokenStatus.status}<br><br>`
     } else {
       this.shadowRoot.getElementById("status").innerHTML = `Not signed in. Use Authorize button to do so.`
     }
@@ -99,6 +99,8 @@ class Element extends HTMLElement {
     let url = await api.get("mail/authorize-link")
     if(!url) return;
     window.open(url)
+    if(!(await confirmDialog("After authorizing, click Ok to refresh status and confirm that everything works again"))) return;
+    this.refreshData();
   }
 
   connectedCallback() {
