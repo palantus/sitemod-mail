@@ -24,7 +24,7 @@ export default (app) => {
     new Mail({
       to: req.body.to, 
       subject: "Test mail", 
-      body: "", 
+      body: "This e-mail confirms that e-mail is working on your instance :)", 
       bodyType: "html"
     }).send().then(success => res.json(success))
   });
