@@ -27,25 +27,30 @@ export default class MailSender {
     let setup = Setup.lookup()
     let signature = setup.signatureHTML ? bodyType == "html" ? `<br>${setup.signatureHTML}` 
                                                              : "\n" + setup.signatureBody 
-                                        : ""
-    let result = await this.callAPI(`${setup.from ? `users/${setup.from}` : "me"}/sendMail`, "post", {
-      "message": {
-        "subject": subject || "No subject",
-        "body": {
-          "contentType": bodyType || "Text",
-          "content": (body || "<empty mail>") + signature
-        },
-        "toRecipients": [
-          {
-            "emailAddress": {
-              "address": to
+                                        : "";
+    try{
+      let result = await this.callAPI(`${setup.from ? `users/${setup.from}` : "me"}/sendMail`, "post", {
+        "message": {
+          "subject": subject || "No subject",
+          "body": {
+            "contentType": bodyType || "Text",
+            "content": (body || "<empty mail>") + signature
+          },
+          "toRecipients": [
+            {
+              "emailAddress": {
+                "address": to
+              }
             }
-          }
-        ]
+          ]
+        }
+      })
+      if(!result.success) {
+        this.log(result.error, "error")
+        return false;
       }
-    })
-    if(!result.success) {
-      this.log(result.error, "error")
+    } catch(err){
+      this.log(err, "error")
       return false;
     }
     return true;
