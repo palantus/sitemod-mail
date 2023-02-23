@@ -29,7 +29,7 @@ template.innerHTML = `
   </style>  
 
   <action-bar>
-      <action-bar-item id="history-btn">History</action-bar-item>
+      <action-bar-item id="history-btn" class="hidden">History</action-bar-item>
   </action-bar>
 
   <div id="container">
@@ -79,7 +79,7 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("send").addEventListener("click", this.send)
 
     userPermissions().then(permissions => {
-      if(permissions.includes("axm.manage.edit")){
+      if(permissions.includes("mail.setup")){
         this.shadowRoot.getElementById("history-btn").classList.remove("hidden")
       }
 
