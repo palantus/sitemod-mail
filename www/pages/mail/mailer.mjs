@@ -104,7 +104,7 @@ class Element extends HTMLElement {
       body: this.shadowRoot.getElementById("body-editor").value(),
     })
 
-    alertDialog("Mail sent!")
+    alertDialog("Mail sent!", {title: "Success"})
     this.shadowRoot.getElementById("send").toggleAttribute("disabled", false)
   }
 
