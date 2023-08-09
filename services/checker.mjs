@@ -20,14 +20,23 @@ async function runJob(){
   if(refreshTokenError) new MailSender().log("Could not refresh e-mail token", "error");
   else new MailSender().log("E-mail token refreshed", "info")
 
-  //Try to resend failed:
-  for(let mail of Mail.allFailed()){
-    new MailSender().log(`Trying to resend e-mail to ${mail._id}...`, "info")
-    let successful = await mail.send()
-    if(!successful){
-      new MailSender().log(`Failed to resend email ${mail._id}`, "error")
+  if(setup.tokenStatus().status == "success"){
+    //Try to resend failed:
+    for(let mail of Mail.allFailed()){
+      if(typeof mail.failSendCount === "number" && mail.failSendCount >= 5){
+        new MailSender().log(`Email ${mail._id} has failed to send 5 times and will not be attempted again...`, "info");
+        mail.status = "failed-aborted";
+        return;
+      }
+      new MailSender().log(`Trying to resend e-mail to ${mail._id}...`, "info")
+      let successful = await mail.send()
+      if(!successful){
+        new MailSender().log(`Failed to resend email ${mail._id}`, "error")
+      }
     }
-  }
+  } else {
+    new MailSender().log(`Will not try to resend mails, as token is not valid`, "info");
+  }  
 
   //Clean up old emails:
   let todayMinus15 = new Date()

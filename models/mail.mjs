@@ -54,6 +54,7 @@ export default class Mail extends Entity {
     } else {
       this.status = "failed"
       this.rel(new LogEntry(`Could not send email to ${this.to}`, "mail"), "log")
+      this.failSendCount = typeof this.failSendCount === "number" ? this.failSendCount + 1 : 1;
       return false;
     }
   }
