@@ -36,7 +36,7 @@ export default (app) => {
     })
   });
 
-  userRoute.post('/:id/reset-password', (req, res, next) => {
+  userRoute.post('/:id/reset-password-with-mail-code', (req, res, next) => {
     let user = User.lookup(req.params.id)
     if (!user) throw "Unknown user"
     if(!req.body.resetKey || req.body.resetKey !== user.passwordResetKey) throw "Invalid reset key for user"

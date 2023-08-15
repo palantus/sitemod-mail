@@ -70,7 +70,7 @@ class Element extends HTMLElement {
 
   async reset(){
     try{
-      let res = await api.post(`user/${(await getUser()).id}/reset-password`, {resetKey: this.resetKey})
+      let res = await api.post(`user/${(await getUser()).id}/reset-password-with-mail-code`, {resetKey: this.resetKey})
       if(res?.success === true){
         this.shadowRoot.getElementById("success-container").classList.toggle("hidden", false)
         this.shadowRoot.getElementById("reset-container").classList.toggle("hidden", true)
