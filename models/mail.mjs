@@ -3,6 +3,7 @@ import LogEntry from "../../../models/logentry.mjs";
 import User from "../../../models/user.mjs";
 import { getTimestamp } from "../../../tools/date.mjs";
 import MailSender from "../services/mailsender.mjs"
+import Setup from "./setup.mjs";
 
 export default class Mail extends Entity {
   initNew({to, subject, body, bodyType } = {}) {
@@ -70,6 +71,20 @@ export default class Mail extends Entity {
     if(filters.user) users = users.filter(u => u.id == filters.user)
     users = users.filter(u => u.email)
     return users
+  }
+
+  static async resendFailed(){
+    if(Setup.lookup().tokenStatus().status != "success"){
+      new MailSender().log(`Will not try to resend mails, as token is not valid`, "error")
+      return null;
+    }
+    for(let mail of Mail.allFailed()){
+      new MailSender().log(`Trying to resend e-mail to ${mail._id}...`, "info")
+      let successful = await mail.send()
+      if(!successful){
+        new MailSender().log(`Failed to resend email ${mail._id}`, "error")
+      }
+    }
   }
 
   toObj() {

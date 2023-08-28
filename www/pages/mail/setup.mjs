@@ -4,9 +4,8 @@ import api from "/system/api.mjs"
 import "/components/field-edit.mjs"
 import "/components/field-list.mjs"
 import "/components/richtext.mjs"
-import {getUser} from "/system/user.mjs"
 import {on, off} from "/system/events.mjs"
-import { promptDialog, confirmDialog } from "/components/dialog.mjs"
+import { promptDialog, confirmDialog, alertDialog } from "/components/dialog.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -40,6 +39,7 @@ template.innerHTML = `
     <h3>Status</h3>
     <div id="status"></div>
     <button id="send-test" class="styled">Send test email</button>
+    <button id="resendfailed" class="styled" title="Attempt to re-send failed e-mails">Re-send failed</button>
     <button id="auth" class="styled">Authorize</button>
     <br>
     <br>
@@ -63,6 +63,10 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("send-test").addEventListener("click", this.sendTest)
     this.shadowRoot.getElementById("auth").addEventListener("click", this.auth)
     this.shadowRoot.getElementById("signature-editor").addEventListener("save", ({detail: {text}}) => api.patch("mail/setup", {signatureBody: text}))
+    this.shadowRoot.getElementById("resendfailed").addEventListener("click", async () => {
+      await api.post("mail/resend-failed")
+      alertDialog(`Successfully initiated re-send of failed e-mails. Visit <field-ref ref="/logs?area=mail">Logs</field-ref> to view progress`)
+    })
     
     this.refreshData();
   }

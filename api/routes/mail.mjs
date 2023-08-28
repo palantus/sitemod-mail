@@ -1,7 +1,7 @@
 import express from "express"
 const { Router, Request, Response } = express;
 const route = Router();
-import { validateAccess } from "../../../../services/auth.mjs"
+import { permission, validateAccess } from "../../../../services/auth.mjs"
 import MailSender from "../../services/mailsender.mjs";
 import User from "../../../../models/user.mjs";
 import SiteSetup from "../../../../models/setup.mjs"
@@ -82,5 +82,10 @@ export default (app) => {
     let mail = Mail.lookup(req.params.id)
     if(!mail) return res.sendStatus(404);
     res.json(mail.getLog().map(e => e.toObj()))
+  })
+
+  route.post('/resend-failed', permission("admin"), (req, res) => {
+    Mail.resendFailed()
+    res.json({success:true})
   })
 };
