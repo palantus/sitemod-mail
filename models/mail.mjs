@@ -68,6 +68,12 @@ export default class Mail extends Entity {
     let users = User.active();
     if(filters.permission) users = users.filter(u => u.permissions.includes(filters.permission))
     if(filters.role) users = users.filter(u => u.roles.includes(filters.role))
+    if(filters.roles && Array.isArray(filters.roles) && filters.roles.length > 0) users = users.filter(u => {
+      for(let role of filters.roles){
+        if(!u.roles.includes(role)) return false;
+      }
+      return true;
+    })
     if(filters.user) users = users.filter(u => u.id == filters.user)
     users = users.filter(u => u.email)
     return users

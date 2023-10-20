@@ -6,9 +6,10 @@ import "/components/field-list.mjs"
 import "/components/action-bar.mjs"
 import "/components/action-bar-item.mjs"
 import "/components/richtext.mjs"
+import "/components/list-inline.mjs"
 import {on, off} from "/system/events.mjs"
 import {goto} from "/system/core.mjs"
-import { alertDialog } from "/components/dialog.mjs"
+import { alertDialog, promptDialog } from "/components/dialog.mjs"
 import {userPermissions} from "/system/user.mjs"
 
 const template = document.createElement('template');
@@ -40,6 +41,7 @@ template.innerHTML = `
     <div class="section">
       <field-list labels-pct="30">
         <field-edit type="select" label="Role" id="role" lookup="role"></field-edit>
+        <list-inline-component label="Multiple roles" id="role-list" wrap></list-inline-component>
         <field-edit type="select" label="Permission" id="permission" lookup="permission"></field-edit>
         <field-edit type="select" label="User" id="user" lookup="user"></field-edit>
       </field-list>
@@ -61,6 +63,9 @@ template.innerHTML = `
 `;
 
 class Element extends HTMLElement {
+  selectedRoleList = []
+  setupDone = false;
+
   constructor() {
     super();
 
@@ -90,6 +95,24 @@ class Element extends HTMLElement {
 
   async refreshData(){
     this.shadowRoot.getElementById("rec-count").innerText = await this.getCurCount()
+
+    if(!this.setupDone){
+      this.shadowRoot.getElementById("role-list").setup({
+        getData: async () => this.selectedRoleList,
+        toHTML: i => `<span title="${i}">${i}</span>`,
+        add: async () => {
+          let role = await promptDialog("Enter role:", "", {lookup: "role", type: "select"})
+          if(!role) return;
+          this.selectedRoleList.push(role)
+          this.refreshData();
+        },
+        remove: async role => {
+          this.selectedRoleList = this.selectedRoleList.filter(r => r != role)
+          this.refreshData();
+        }
+      })
+      this.setupDone = true;
+    }
   }
 
   async send(){
@@ -98,6 +121,7 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("send").toggleAttribute("disabled", true)
     await api.post("mail/send", {
       role: this.shadowRoot.getElementById("role").getValue(),
+      roles: this.selectedRoleList,
       permission: this.shadowRoot.getElementById("permission").getValue(),
       user: this.shadowRoot.getElementById("user").getValue(),
       subject: this.shadowRoot.getElementById("subject").getValue(),
@@ -111,6 +135,7 @@ class Element extends HTMLElement {
   async getCurCount(){
     let {count} = await api.post('mail/recipient-count', {
       role: this.shadowRoot.getElementById("role").getValue(),
+      roles: this.selectedRoleList,
       permission: this.shadowRoot.getElementById("permission").getValue(),
       user: this.shadowRoot.getElementById("user").getValue(),
     })
