@@ -1,16 +1,16 @@
 const elementName = 'mailer-page'
 
-import api from "/system/api.mjs"
-import "/components/field-edit.mjs"
-import "/components/field-list.mjs"
-import "/components/action-bar.mjs"
-import "/components/action-bar-item.mjs"
-import "/components/richtext.mjs"
-import "/components/list-inline.mjs"
-import {on, off} from "/system/events.mjs"
-import {goto} from "/system/core.mjs"
-import { alertDialog, promptDialog } from "/components/dialog.mjs"
-import {userPermissions} from "/system/user.mjs"
+import api from "../../system/api.mjs"
+import "../../components/field-edit.mjs"
+import "../../components/field-list.mjs"
+import "../../components/action-bar.mjs"
+import "../../components/action-bar-item.mjs"
+import "../../components/richtext.mjs"
+import "../../components/list-inline.mjs"
+import {on, off} from "../../system/events.mjs"
+import {goto} from "../../system/core.mjs"
+import { alertDialog, promptDialog } from "../../components/dialog.mjs"
+import {userPermissions} from "../../system/user.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `

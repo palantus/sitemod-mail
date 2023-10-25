@@ -1,8 +1,8 @@
 const elementName = 'mail-password-reset-page'
 
-import api from "/system/api.mjs"
-import {goto, state, pushStateQuery} from "/system/core.mjs"
-import {getUser} from "/system/user.mjs"
+import api from "../../system/api.mjs"
+import {goto, state, pushStateQuery} from "../../system/core.mjs"
+import {getUser} from "../../system/user.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `

@@ -1,10 +1,10 @@
 const elementName = 'mail-history-page'
 
-import api from "/system/api.mjs"
-import "/components/action-bar.mjs"
-import "/components/action-bar-item.mjs"
-import {on, off} from "/system/events.mjs"
-import {showDialog } from "/components/dialog.mjs"
+import api from "../../system/api.mjs"
+import "../../components/action-bar.mjs"
+import "../../components/action-bar-item.mjs"
+import {on, off} from "../../system/events.mjs"
+import {showDialog } from "../../components/dialog.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `

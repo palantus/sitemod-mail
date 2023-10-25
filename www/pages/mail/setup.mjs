@@ -1,11 +1,11 @@
 const elementName = 'mail-setup-page'
 
-import api from "/system/api.mjs"
-import "/components/field-edit.mjs"
-import "/components/field-list.mjs"
-import "/components/richtext.mjs"
-import {on, off} from "/system/events.mjs"
-import { promptDialog, confirmDialog, alertDialog } from "/components/dialog.mjs"
+import api from "../../system/api.mjs"
+import "../../components/field-edit.mjs"
+import "../../components/field-list.mjs"
+import "../../components/richtext.mjs"
+import {on, off} from "../../system/events.mjs"
+import { promptDialog, confirmDialog, alertDialog } from "../../components/dialog.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
