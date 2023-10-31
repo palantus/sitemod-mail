@@ -1,12 +1,11 @@
 const elementName = 'mail-password-reset-page'
 
 import api from "../../system/api.mjs"
-import {goto, state, pushStateQuery} from "../../system/core.mjs"
+import {stylesheets, state, pushStateQuery} from "../../system/core.mjs"
 import {getUser} from "../../system/user.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
-  <link rel='stylesheet' href='/css/global.css'>
   <style>
     #container{
         padding: 10px;
@@ -47,7 +46,8 @@ class Element extends HTMLElement {
   constructor() {
     super();
 
-    this.attachShadow({ mode: 'open' });
+    this.attachShadow({ mode: 'open' })
+        .adoptedStyleSheets = [stylesheets.global];
     this.shadowRoot.appendChild(template.content.cloneNode(true));
 
     this.reset = this.reset.bind(this)
