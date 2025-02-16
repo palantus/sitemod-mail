@@ -25,6 +25,10 @@ template.innerHTML = `
     field-list{
       width: 600px;
     }
+    #rec-count{
+      color: var(--link);
+      cursor: pointer;
+    }
     .hidden{display: none;}
   </style>  
 
@@ -74,8 +78,10 @@ class Element extends HTMLElement {
 
     this.refreshData = this.refreshData.bind(this);
     this.send = this.send.bind(this);
+    this.showRecipients = this.showRecipients.bind(this);
 
     this.shadowRoot.getElementById("history-btn").addEventListener("click", () => goto("/mail/history"))
+    this.shadowRoot.getElementById("rec-count").addEventListener("click", () => this.showRecipients());
 
     this.shadowRoot.getElementById("role").addEventListener("value-changed", this.refreshData)
     this.shadowRoot.getElementById("user").addEventListener("value-changed", this.refreshData)
@@ -133,13 +139,21 @@ class Element extends HTMLElement {
   }
 
   async getCurCount(){
-    let {count} = await api.post('mail/recipient-count', {
+    return (await this.getRecipients()).length;
+  }
+  
+  async getRecipients(){
+    return await api.post('mail/recipients', {
       role: this.shadowRoot.getElementById("role").getValue(),
       roles: this.selectedRoleList,
       permission: this.shadowRoot.getElementById("permission").getValue(),
       user: this.shadowRoot.getElementById("user").getValue(),
     })
-    return count;
+  }
+
+  async showRecipients(){
+    let recipients = await this.getRecipients();
+    alertDialog(recipients.sort((a,b) => a.name < b.name ? -1 : 1).map(r => `<span title="${r.id}, ${r.email||"N/A"}">${r.name}</span>`).join("<br>"), {title: "Recipients"});
   }
 
   connectedCallback() {

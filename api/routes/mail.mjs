@@ -67,9 +67,8 @@ export default (app) => {
     res.json(Setup.lookup().tokenStatus())
   })
   
-  route.post('/recipient-count', function (req, res, next) {
-    if (!validateAccess(req, res, { permission: "mail.send" })) return;
-    res.json({count: Mail.getUsersFromFilters(req.body).length})
+  route.post('/recipients', permission("mail.send"), (req, res) => {
+    res.json(Mail.getUsersFromFilters(req.body).map(u => ({id: u.id, name: u.name, email: u.email||null})));
   })
   
   route.get('/history', (req, res) => {
