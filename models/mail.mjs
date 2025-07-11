@@ -35,7 +35,7 @@ export default class Mail extends Entity {
     return query.type(Mail).tag("mail").prop("status", "sent").all
   }
 
-  async send(){
+  async send(attachments){
     if(!this.to) {
       this.log("Missing 'to' in email");
       return false;
@@ -45,7 +45,8 @@ export default class Mail extends Entity {
       to: this.to, 
       subject: this.subject||"<empty subject>", 
       body: this.body||"",
-      bodyType: this.bodyType||"Text"
+      bodyType: this.bodyType||"Text",
+      attachments,
     })
 
     if(isSent){

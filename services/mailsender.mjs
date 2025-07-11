@@ -23,11 +23,23 @@ export default class MailSender {
     this.mail?.rel(entry, "log")
   }
 
-  async send({to, subject, body, bodyType}) {
+  /*
+   * attachments: {name: 'test.csv', contentType: 'text/csv', contentBytes: 'SGVsbG8gV29ybGQh'}
+  */
+  async send({to, subject, body, bodyType, attachments}) {
     let setup = Setup.lookup()
     let signature = setup.signatureHTML ? bodyType == "html" ? `<br>${setup.signatureHTML}` 
                                                              : "\n" + setup.signatureBody 
                                         : "";
+
+    if(attachments){
+      for(let a of attachments){
+        a['@odata.type'] = '#microsoft.graph.fileAttachment';
+        if(!a.contentType)
+          a.contentType = 'application/octet-stream';
+      }
+    }
+
     try{
       let result = await this.callAPI(`${setup.from ? `users/${setup.from}` : "me"}/sendMail`, "post", {
         "message": {
@@ -42,7 +54,8 @@ export default class MailSender {
                 "address": to
               }
             }
-          ]
+          ],
+          attachments
         }
       })
       if(!result.success) {
