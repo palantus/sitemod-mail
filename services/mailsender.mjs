@@ -113,7 +113,7 @@ export default class MailSender {
   }
   
   async login(code) {
-    let clientId = Setup.lookup().clietId;
+    let clientId = Setup.lookup().clientId;
     if (!clientId)
       return null;
 
