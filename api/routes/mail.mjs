@@ -48,7 +48,6 @@ export default (app) => {
   route.get('/auth/redirect', async function (req, res, next) {
     const requestToken = req.query.code;
     const state = req.query.state;
-    new LogEntry(`Request token: ${requestToken}, state: ${state}`, "mail");
     try{
       await new MailSender().login(requestToken)
       if (state.startsWith("http")) {

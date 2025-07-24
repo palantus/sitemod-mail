@@ -117,7 +117,6 @@ export default class MailSender {
     if (!clientId)
       return null;
 
-    this.log(`Client id: ${clientId}`);
     let res = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token",
       {
         method: 'POST',
