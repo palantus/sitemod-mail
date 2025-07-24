@@ -113,9 +113,11 @@ export default class MailSender {
   }
   
   async login(code) {
-    if (!Setup.lookup().clientId)
+    let clientId = Setup.lookup().clietId;
+    if (!clientId)
       return null;
 
+    this.log(`Client id: ${clientId}`);
     let res = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token",
       {
         method: 'POST',
@@ -123,7 +125,7 @@ export default class MailSender {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         // Note offline_access: necessary for getting refresh_token
-        body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&code=${encodeURIComponent(code)}&redirect_uri=${this.getRedirectUrl()}&grant_type=authorization_code`
+        body: `client_id=${clientId}&scope=${MailSender.scope}&code=${encodeURIComponent(code)}&redirect_uri=${this.getRedirectUrl()}&grant_type=authorization_code`
       })
     res = await res.json();
     this.log(JSON.stringify(res), "info")
