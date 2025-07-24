@@ -9,6 +9,7 @@ import Mail from "../../models/mail.mjs";
 import Setup from "../../models/setup.mjs";
 import Permission from "../../../../models/permission.mjs";
 import { md2html } from "../../../../tools/markdown.mjs";
+import LogEntry from "../../../../models/logentry.mjs";
 
 export default (app) => {
 
@@ -45,8 +46,9 @@ export default (app) => {
   });
 
   route.get('/auth/redirect', async function (req, res, next) {
-    const requestToken = req.query.code
-    const state = req.query.state
+    const requestToken = req.query.code;
+    const state = req.query.state;
+    new LogEntry(`Request token: ${requestToken}, state: ${state}`, "mail");
     try{
       await new MailSender().login(requestToken)
       if (state.startsWith("http")) {
