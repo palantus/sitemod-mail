@@ -32,7 +32,8 @@ export default class Setup extends Entity{
       clientId: this.clientId || null,
       from: this.from || null,
       defaultAccount: this.defaultAccount?.toObj() || null,
-      signatureBody: this.signatureBody || null
+      signatureBody: this.signatureBody || null,
+      msSigninSecretSet: !!this.msSigninSecret,
     }
   }
 }

@@ -21,6 +21,7 @@ export default (app) => {
     let setup = Setup.lookup();
 
     if(req.body.clientId !== undefined) setup.clientId = req.body.clientId;
+    if(req.body.msSigninSecret  !== undefined) setup.msSigninSecret = req.body.msSigninSecret;
     if(req.body.from !== undefined) setup.from = req.body.from;
     if(typeof req.body.signatureBody === "string") {
       setup.signatureBody = req.body.signatureBody;

@@ -113,7 +113,8 @@ export default class MailSender {
   }
   
   async login(code) {
-    let clientId = Setup.lookup().clientId;
+    let setup = Setup.lookup();
+    let clientId = setup.clientId;
     if (!clientId)
       return null;
 
@@ -124,7 +125,7 @@ export default class MailSender {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         // Note offline_access: necessary for getting refresh_token
-        body: `client_id=${clientId}&scope=${MailSender.scope}&code=${encodeURIComponent(code)}&redirect_uri=${this.getRedirectUrl()}&grant_type=authorization_code`
+        body: `client_id=${clientId}&scope=${MailSender.scope}&code=${encodeURIComponent(code)}&redirect_uri=${this.getRedirectUrl()}&grant_type=authorization_code&client_secret=${encodeURIComponent(setup.msSigninSecret)}`
       })
     res = await res.json();
     this.log(JSON.stringify(res), "info")
@@ -158,7 +159,6 @@ export default class MailSender {
     account.expires = getTimestamp(res.expires_in*1000)
     account.lastTokenRefreshStatus = "success"
 
-    let setup = Setup.lookup()
     setup.rel(account, "account", true)
     return account
   }

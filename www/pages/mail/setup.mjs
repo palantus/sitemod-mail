@@ -32,6 +32,7 @@ template.innerHTML = `
     <h1>Mail setup</h1>
     <field-list labels-pct="30">
       <field-edit type="text" label="Client Id" id="clientId" placeholder="Get from App registrations in Azure"></field-edit>
+      <field-edit type="text" label="Secret" id="msSigninSecret"></field-edit>
       <field-edit type="text" label="From address/account" id="from" placeholder="Optional. Defaults to 'me'."></field-edit>
     </field-list>
     <br>
@@ -77,6 +78,7 @@ class Element extends HTMLElement {
     let setup = await api.get("mail/setup")
 
     this.shadowRoot.getElementById("clientId").setAttribute("value", setup.clientId||"")
+    this.shadowRoot.getElementById('msSigninSecret').setAttribute("value", setup.msSigninSecretSet ? "*********" : "")
     this.shadowRoot.getElementById("from").setAttribute("value", setup.from||"")
 
     this.shadowRoot.getElementById("send-test").toggleAttribute("disabled", !setup.defaultAccount)
