@@ -164,7 +164,8 @@ export default class MailSender {
   }
   
   async refreshToken(account) {
-    if (!Setup.lookup().clientId)
+    let setup = Setup.lookup();
+    if (!setup.clientId)
       return null;
 
     let res = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token",
@@ -174,7 +175,7 @@ export default class MailSender {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         // Note offline_access: necessary for getting refresh_token
-        body: `client_id=${Setup.lookup().clientId}&scope=${MailSender.scope}&refresh_token=${encodeURIComponent(account.refreshToken)}&redirect_uri=${this.getRedirectUrl()}&grant_type=refresh_token`
+        body: `client_id=${setup.clientId}&scope=${MailSender.scope}&refresh_token=${encodeURIComponent(account.refreshToken)}&redirect_uri=${this.getRedirectUrl()}&grant_type=refresh_token&client_secret=${encodeURIComponent(setup.msSigninSecret)}`
       })
     res = await res.json();
     if (res.error) {
